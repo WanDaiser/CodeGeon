@@ -4,6 +4,7 @@ export type World = {
   name: string;
   theme: string;
   mascot: string;
+  mascotSprite: string;
   palette: {
     bg: string;
     ground: string;
@@ -33,6 +34,7 @@ export const worlds: World[] = [
     name: "Data Village",
     theme: "Variables and values",
     mascot: "Byte",
+    mascotSprite: "/mascots/byte.png",
     palette: { bg: "#9be7ff", ground: "#7ccf7a", accent: "#ffd166", dark: "#19324a" },
     summary: "Name values, change types, and print friendly messages.",
   },
@@ -42,6 +44,7 @@ export const worlds: World[] = [
     name: "Decision Castle",
     theme: "If statements",
     mascot: "Ivy",
+    mascotSprite: "/mascots/ivy.png",
     palette: { bg: "#b7a9ff", ground: "#8172d9", accent: "#ff8fab", dark: "#20183f" },
     summary: "Teach programs to choose paths with conditions.",
   },
@@ -51,6 +54,7 @@ export const worlds: World[] = [
     name: "Loop Forest",
     theme: "Loops",
     mascot: "Fern",
+    mascotSprite: "/mascots/fern.png",
     palette: { bg: "#b9fbc0", ground: "#4d9f6c", accent: "#f9c74f", dark: "#173b2f" },
     summary: "Repeat patterns without repeating yourself.",
   },
@@ -60,6 +64,7 @@ export const worlds: World[] = [
     name: "Data Structure Island",
     theme: "Collections",
     mascot: "Nori",
+    mascotSprite: "/mascots/nori.png",
     palette: { bg: "#90dbf4", ground: "#00a6a6", accent: "#ffbf69", dark: "#073b4c" },
     summary: "Store groups of things in lists, dictionaries, sets, and tuples.",
   },
@@ -69,6 +74,7 @@ export const worlds: World[] = [
     name: "Function Tower",
     theme: "Functions",
     mascot: "Pip",
+    mascotSprite: "/mascots/pip.png",
     palette: { bg: "#ffc8dd", ground: "#cdb4db", accent: "#a2d2ff", dark: "#43213d" },
     summary: "Bundle useful code into reusable spells.",
   },
@@ -78,6 +84,7 @@ export const worlds: World[] = [
     name: "Algorithm Summit",
     theme: "Algorithms",
     mascot: "Mina",
+    mascotSprite: "/mascots/mina.png",
     palette: { bg: "#caf0f8", ground: "#48cae4", accent: "#f77f00", dark: "#023047" },
     summary: "Watch searching and sorting ideas move as pixel blocks.",
   },

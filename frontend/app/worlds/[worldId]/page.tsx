@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Lock, Play } from "lucide-react";
 
 import AlgoCanvas from "@/components/AlgoCanvas";
+import MascotSprite from "@/components/MascotSprite";
 import { getLevelsForWorld, getWorld } from "@/lib/content";
 
 type WorldLevelMapPageProps = {
@@ -62,7 +63,10 @@ export default function WorldLevelMapPage({ params }: WorldLevelMapPageProps) {
 
           <aside className="grid content-start gap-5">
             <section className="border-4 border-ink bg-white p-4 shadow-pixel">
-              <p className="font-pixel text-xs">{world.mascot}</p>
+              <div className="flex items-end gap-3">
+                <MascotSprite name={world.mascot} src={world.mascotSprite} state="idle" size="sm" />
+                <p className="pb-3 font-pixel text-xs">{world.mascot}</p>
+              </div>
               <p className="mt-3 text-sm leading-6 text-slate-700">{world.summary}</p>
             </section>
             {world.id === 6 ? <AlgoCanvas /> : null}

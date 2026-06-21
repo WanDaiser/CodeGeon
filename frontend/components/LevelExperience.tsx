@@ -121,7 +121,12 @@ export default function LevelExperience({ level, world }: LevelExperienceProps) 
         >
           {activeTab === "intro" ? (
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <MascotPanel mascot={world.mascot} worldName={world.name} line={level.mascotLine} />
+              <MascotPanel
+                mascot={world.mascot}
+                spriteSrc={world.mascotSprite}
+                worldName={world.name}
+                line={level.mascotLine}
+              />
               <section className="border-4 border-ink bg-white p-4 shadow-pixel">
                 <h2 className="font-pixel text-xs">Quest Task</h2>
                 <p className="mt-3 text-base leading-7 text-slate-800">{level.taskDescription}</p>

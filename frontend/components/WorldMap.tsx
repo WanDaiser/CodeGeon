@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Lock, MapPin, Star } from "lucide-react";
 
+import MascotSprite from "@/components/MascotSprite";
 import type { World } from "@/lib/content";
 
 type WorldMapProps = {
@@ -31,17 +32,20 @@ export default function WorldMap({ worlds }: WorldMapProps) {
                 </div>
               </div>
 
-              <div className="my-5 grid h-20 grid-cols-8 items-end gap-1 border-4 border-ink bg-sky-50/70 p-2">
-                {Array.from({ length: 8 }).map((_, blockIndex) => (
-                  <span
-                    key={blockIndex}
-                    className="block border-2 border-ink"
-                    style={{
-                      height: `${24 + ((blockIndex + index) % 4) * 10}px`,
-                      backgroundColor: blockIndex % 2 === 0 ? world.palette.accent : "#ffffff",
-                    }}
-                  />
-                ))}
+              <div className="my-5 flex h-32 items-end justify-between overflow-hidden border-4 border-ink bg-sky-50/70 px-3">
+                <MascotSprite name={world.mascot} src={world.mascotSprite} state="idle" size="sm" />
+                <div className="mb-2 grid w-28 grid-cols-4 items-end gap-1">
+                  {Array.from({ length: 4 }).map((_, blockIndex) => (
+                    <span
+                      key={blockIndex}
+                      className="block border-2 border-ink"
+                      style={{
+                        height: `${24 + ((blockIndex + index) % 4) * 10}px`,
+                        backgroundColor: blockIndex % 2 === 0 ? world.palette.accent : "#ffffff",
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className="border-4 border-ink bg-white/90 p-3">

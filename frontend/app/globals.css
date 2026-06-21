@@ -21,6 +21,61 @@ a {
   image-rendering: pixelated;
 }
 
+.mascot-sprite {
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.mascot-idle {
+  animation: mascot-idle 2.8s steps(2, end) infinite;
+}
+
+.mascot-talk {
+  animation: mascot-talk 0.8s steps(2, end) infinite;
+}
+
+.mascot-celebrate {
+  animation: mascot-celebrate 0.7s steps(3, end) 2;
+}
+
+@keyframes mascot-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes mascot-talk {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+@keyframes mascot-celebrate {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-idle,
+  .mascot-talk,
+  .mascot-celebrate {
+    animation: none;
+  }
+}
+
 .bg-grid {
   background-color: #dff7ff;
   background-image:
