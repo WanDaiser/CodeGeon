@@ -7,13 +7,14 @@ type MascotPanelProps = {
   line: string;
   worldName: string;
   spriteSrc: string;
+  state?: "idle" | "talk" | "celebrate";
 };
 
-export default function MascotPanel({ mascot, line, worldName, spriteSrc }: MascotPanelProps) {
+export default function MascotPanel({ mascot, line, worldName, spriteSrc, state = "talk" }: MascotPanelProps) {
   return (
     <section className="grid gap-4 border-4 border-ink bg-white p-4 shadow-pixel md:grid-cols-[128px_minmax(0,1fr)]">
       <div className="grid min-h-40 place-items-center overflow-hidden border-4 border-ink bg-amber-100">
-        <MascotSprite name={mascot} src={spriteSrc} state="talk" size="md" priority />
+        <MascotSprite name={mascot} src={spriteSrc} state={state} size="md" priority />
       </div>
 
       <div>

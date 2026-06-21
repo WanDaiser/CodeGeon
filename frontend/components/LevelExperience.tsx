@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Code2, Trophy } from "lucide-react";
 
 import BonusChallenge from "@/components/BonusChallenge";
+import BackendUnavailable from "@/components/BackendUnavailable";
 import CodeEditor from "@/components/CodeEditor";
+import FirstLevelOnboarding from "@/components/FirstLevelOnboarding";
 import MascotPanel from "@/components/MascotPanel";
 import TestResults from "@/components/TestResults";
 import type { Level, World } from "@/lib/content";
@@ -19,6 +21,11 @@ type ExecuteResponse = {
   duration_ms: number;
   friendly_error: string | null;
   error_type: string | null;
+  output_truncated: boolean;
+  cancelled: boolean;
+  tests_passed: number;
+  tests_total: number;
+  test_results: boolean[];
 };
 
 type LevelExperienceProps = {
@@ -37,28 +44,66 @@ type TabId = (typeof tabs)[number]["id"];
 export default function LevelExperience({ level, world }: LevelExperienceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("intro");
   const [code, setCode] = useState(level.starterCode);
+  const [stdin, setStdin] = useState(level.inputPlaceholder ?? "");
   const [output, setOutput] = useState("");
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
   const [rawError, setRawError] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [passed, setPassed] = useState<boolean | null>(null);
+  const [testsPassed, setTestsPassed] = useState(0);
+  const [testsTotal, setTestsTotal] = useState(0);
+  const [testResults, setTestResults] = useState<boolean[]>([]);
+  const [outputTruncated, setOutputTruncated] = useState(false);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
+  const abortController = useRef<AbortController | null>(null);
+  const activeRequestId = useRef<string | null>(null);
 
   const apiUrl = useMemo(() => process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000", []);
+
+  function clearResult() {
+    setOutput("");
+    setFriendlyError(null);
+    setRawError("");
+    setPassed(null);
+    setTestsPassed(0);
+    setTestsTotal(0);
+    setTestResults([]);
+    setOutputTruncated(false);
+    setBackendUnavailable(false);
+  }
+
+  function changeCode(nextCode: string) {
+    setCode(nextCode);
+    clearResult();
+  }
+
+  function changeStdin(nextStdin: string) {
+    setStdin(nextStdin);
+    clearResult();
+  }
 
   async function runCode() {
     setIsRunning(true);
     setFriendlyError(null);
     setRawError("");
     setOutput("");
+    setBackendUnavailable(false);
+    const requestId = crypto.randomUUID();
+    const controller = new AbortController();
+    activeRequestId.current = requestId;
+    abortController.current = controller;
 
     try {
       const response = await fetch(`${apiUrl}/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, stdin, challenge_id: level.id, request_id: requestId }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
+        if (response.status === 503) setBackendUnavailable(true);
+        if (response.status === 429) throw new Error("Too many runs. Take a short break, then try again.");
         throw new Error(`Backend returned ${response.status}`);
       }
 
@@ -66,20 +111,42 @@ export default function LevelExperience({ level, world }: LevelExperienceProps) 
       setOutput(result.stdout);
       setFriendlyError(result.friendly_error);
       setRawError(result.stderr);
-      setPassed(result.exit_code === 0 && !result.timed_out && !result.friendly_error);
+      setTestsPassed(result.tests_passed);
+      setTestsTotal(result.tests_total);
+      setTestResults(result.test_results);
+      setOutputTruncated(result.output_truncated);
+      setPassed(result.tests_total > 0 && result.tests_passed === result.tests_total);
       setActiveTab("result");
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setFriendlyError("Code run cancelled.");
+        return;
+      }
       setPassed(false);
-      setFriendlyError("The CodeQuest backend is not ready yet. Start it with docker compose up --build, then try Run again.");
+      setBackendUnavailable(true);
+      setFriendlyError(error instanceof Error && error.message.startsWith("Too many") ? error.message : "The CodeQuest backend is not ready yet. Your code is still saved in the editor.");
       setRawError(error instanceof Error ? error.message : "Unknown connection error");
       setActiveTab("result");
     } finally {
       setIsRunning(false);
+      abortController.current = null;
+      activeRequestId.current = null;
+    }
+  }
+
+  async function cancelRun() {
+    const requestId = activeRequestId.current;
+    abortController.current?.abort();
+    setIsRunning(false);
+    setFriendlyError("Code run cancelled.");
+    if (requestId) {
+      await fetch(`${apiUrl}/execute/${requestId}`, { method: "DELETE" }).catch(() => undefined);
     }
   }
 
   return (
     <div className="min-h-screen bg-grid px-4 py-5 text-ink sm:px-6 lg:px-8">
+      {level.id === "1-1" ? <FirstLevelOnboarding /> : null}
       <div className="mx-auto max-w-7xl">
         <header className="flex flex-wrap items-center justify-between gap-3 border-4 border-ink bg-white p-3 shadow-pixel">
           <Link href={`/worlds/${world.id}`} className="icon-button" title="Back to level map">
@@ -130,6 +197,9 @@ export default function LevelExperience({ level, world }: LevelExperienceProps) 
               <section className="border-4 border-ink bg-white p-4 shadow-pixel">
                 <h2 className="font-pixel text-xs">Quest Task</h2>
                 <p className="mt-3 text-base leading-7 text-slate-800">{level.taskDescription}</p>
+                <ul className="mt-4 grid gap-2">
+                  {level.lesson.map((point) => <li key={point} className="border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2 text-sm leading-6 text-slate-800">{point}</li>)}
+                </ul>
                 <button type="button" onClick={() => setActiveTab("challenge")} className="pixel-button mt-5">
                   Start coding
                   <ArrowRight size={16} />
@@ -146,20 +216,30 @@ export default function LevelExperience({ level, world }: LevelExperienceProps) 
               </section>
               <CodeEditor
                 value={code}
-                onChange={setCode}
+                onChange={changeCode}
                 onRun={runCode}
-                onReset={() => setCode(level.starterCode)}
+                onCancel={cancelRun}
+                onReset={() => changeCode(level.starterCode)}
                 isRunning={isRunning}
                 output={output || rawError}
                 friendlyError={friendlyError}
+                stdin={stdin}
+                onStdinChange={changeStdin}
+                inputPlaceholder={level.inputPlaceholder}
+                showInput={level.usesInput}
+                outputTruncated={outputTruncated}
               />
             </div>
           ) : null}
 
           {activeTab === "result" ? (
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <TestResults passed={passed} expectedHint={level.expectedHint} output={output} error={friendlyError} />
+              <div className="grid gap-5">
+                {backendUnavailable ? <BackendUnavailable onRetry={runCode} /> : null}
+                <TestResults passed={passed} expectedHint={level.expectedHint} output={output} error={friendlyError} rawError={rawError} testsPassed={testsPassed} testsTotal={testsTotal} testResults={testResults} />
+              </div>
               <div className="grid content-start gap-5">
+                {passed ? <MascotPanel mascot={world.mascot} spriteSrc={world.mascotSprite} worldName={world.name} line="Every hidden test passed. That solution is ready for the next quest!" state="celebrate" /> : null}
                 <section className="border-4 border-ink bg-white p-4 shadow-pixel">
                   <div className="flex items-center gap-2 font-pixel text-xs">
                     <Check size={18} />

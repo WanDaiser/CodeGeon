@@ -6,6 +6,8 @@ __pycache__/
 node_modules/
 .next/
 *.tsbuildinfo
+test-results/
+playwright-report/
 
 postgres_data/
 tmp/

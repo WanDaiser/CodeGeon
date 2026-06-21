@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
-import { Play, RotateCcw } from "lucide-react";
+import { LoaderCircle, Play, RotateCcw, Square } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -17,22 +17,34 @@ type CodeEditorProps = {
   value: string;
   onChange: (value: string) => void;
   onRun: () => void;
+  onCancel?: () => void;
   onReset?: () => void;
   isRunning?: boolean;
   readOnly?: boolean;
   output?: string;
   friendlyError?: string | null;
+  stdin?: string;
+  onStdinChange?: (value: string) => void;
+  inputPlaceholder?: string;
+  showInput?: boolean;
+  outputTruncated?: boolean;
 };
 
 export default function CodeEditor({
   value,
   onChange,
   onRun,
+  onCancel,
   onReset,
   isRunning = false,
   readOnly = false,
   output = "",
   friendlyError = null,
+  stdin = "",
+  onStdinChange,
+  inputPlaceholder = "Type program input here",
+  showInput = false,
+  outputTruncated = false,
 }: CodeEditorProps) {
   const handleMount: OnMount = (editor, monaco) => {
     monaco.editor.defineTheme("codequest-pixel", {
@@ -71,19 +83,18 @@ export default function CodeEditor({
                 <RotateCcw size={16} />
               </button>
             ) : null}
-            <button
-              type="button"
-              title="Run code"
-              onClick={onRun}
-              disabled={isRunning || readOnly}
-              className="flex h-9 items-center gap-2 border-2 border-slate-900 bg-emerald-300 px-3 font-pixel text-[10px] text-slate-950 shadow-[2px_2px_0_#0f172a] disabled:cursor-not-allowed disabled:bg-slate-200 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-            >
-              <Play size={14} fill="currentColor" />
-              {isRunning ? "RUNNING" : "RUN"}
-            </button>
+            {isRunning ? (
+              <button type="button" title="Cancel run" onClick={onCancel} className="flex h-9 items-center gap-2 border-2 border-slate-900 bg-rose-300 px-3 font-pixel text-[10px] shadow-[2px_2px_0_#0f172a]">
+                <Square size={13} fill="currentColor" /> STOP
+              </button>
+            ) : (
+              <button type="button" title="Run code" onClick={onRun} disabled={readOnly} className="flex h-9 items-center gap-2 border-2 border-slate-900 bg-emerald-300 px-3 font-pixel text-[10px] text-slate-950 shadow-[2px_2px_0_#0f172a] disabled:cursor-not-allowed disabled:bg-slate-200 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none">
+                <Play size={14} fill="currentColor" /> RUN
+              </button>
+            )}
           </div>
         </div>
-        <div className="h-[420px]">
+        <div className="h-[340px] sm:h-[420px] lg:h-[460px]">
           <MonacoEditor
             height="100%"
             language="python"
@@ -99,9 +110,19 @@ export default function CodeEditor({
               scrollBeyondLastLine: false,
               tabSize: 4,
               wordWrap: "on",
+              automaticLayout: true,
+              folding: false,
+              glyphMargin: false,
+              lineNumbersMinChars: 3,
             }}
           />
         </div>
+        {showInput ? (
+          <div className="border-t-4 border-ink bg-sky-50 p-3">
+            <label htmlFor="program-input" className="font-pixel text-[10px] text-ink">Program input</label>
+            <textarea id="program-input" value={stdin} onChange={(event) => onStdinChange?.(event.target.value)} placeholder={inputPlaceholder} rows={3} className="mt-2 w-full resize-y border-2 border-ink bg-white p-2 font-mono text-sm outline-none focus:ring-4 focus:ring-sky-300" />
+          </div>
+        ) : null}
       </div>
 
       <aside className="border-4 border-slate-900 bg-slate-950 text-white shadow-[6px_6px_0_#0f172a]">
@@ -114,7 +135,8 @@ export default function CodeEditor({
               {friendlyError}
             </div>
           ) : null}
-          {output || "Run your code to see what happens."}
+          {isRunning ? <div className="flex items-center gap-2 font-sans text-sm"><LoaderCircle className="animate-spin" size={18} /> Running in the sandbox...</div> : output || "Run your code to see what happens."}
+          {outputTruncated ? <p className="mt-3 border-2 border-amber-300 bg-amber-950 p-2 font-sans text-xs text-amber-100">Output stopped at 64 KB.</p> : null}
         </div>
       </aside>
     </section>
